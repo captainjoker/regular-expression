@@ -14,8 +14,9 @@ function NodeInterface(props){
 
 /**
  * 
- * @param {*} min 
- * @param {*} max 
+ * @param {*} min 最小次数
+ * @param {*} max 最大次数
+ * @param {*} isLazy 是否非贪婪
  * @returns 字符次数节点
  */
 const QuantifierNode = function(min = 0, max = -1, isLazy = false){
@@ -29,7 +30,7 @@ const QuantifierNode = function(min = 0, max = -1, isLazy = false){
 
 /**
  * 
- * @param {*} text 
+ * @param {*} value 
  * @returns 边界节点
  */
 const BoundaryNode = function(value){
@@ -54,6 +55,8 @@ const GroupIdNode = function(value){
 /**
  * 
  * @param {*} groupId 分组号
+ * @param {*} isCatch 是否捕获
+ * @param {*} value 
  * @returns 分组节点
  */
 const GroupNode = function(groupId = 1, isCatch = true, value = []){
@@ -83,7 +86,8 @@ const AssertionsNode = function(value = [], isNone = false, isPositive = true){
 
 /**
  * 
- * @param {*} text 
+ * @param {*} value 
+ * @param {*} isNone 是否非
  * @returns 字符集节点
  */
 const CharSetNode = function(value = [], isNone = false){
@@ -109,7 +113,7 @@ const RangeCharSetNode  = function(min = -1, max = -1){
 
 /**
  * 
- * @param {*} text 
+ * @param {*} value 
  * @returns 预定义字符集节点
  */
 const PresetCharSetNode = function(value = ''){
@@ -121,7 +125,8 @@ const PresetCharSetNode = function(value = ''){
 
 /**
  * 
- * @param {*} isOr 是否 或
+ * @param {*} left 左节点
+ * @param {*} right 右节点
  * @returns 逻辑节点
  */
 const LogicOrNode = function(left = [], right = []){

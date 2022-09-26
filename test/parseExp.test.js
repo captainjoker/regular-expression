@@ -1,6 +1,7 @@
 const parseExp = require('../src/parseExp');
 const { CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('../src/expNode');
 
+
 describe('parseExp CharsNode', () => {
   it('abc', () => {
     expect(parseExp('abc')).toEqual({ 
@@ -32,6 +33,18 @@ describe('parseExp CharsetNode', () => {
         CharSetNode([
           CharsNode('123'),
         ], true)
+      ],
+      groupNum : 0
+    });
+  });
+
+  it('abc[\\[123]', () => {
+    expect(parseExp('abc[\\[123]')).toEqual({ 
+      expNodeList : [
+        CharsNode('abc'),
+        CharSetNode([
+          CharsNode('[123'),
+        ])
       ],
       groupNum : 0
     });

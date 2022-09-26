@@ -28,7 +28,7 @@ const handlerEscapes = function(nextChar, expNodeList){
   } else if (isBoundary(nextChar)){
     // 为边界节点时
     expNodeList.push(BoundaryNode(nextChar));
-  } else if (isCharSet){
+  } else if (isCharSet(nextChar)){
     // 为预置字符集时
     expNodeList.push(PresetCharSetNode(nextChar));
   } else {
@@ -344,6 +344,6 @@ const parseExp = function(exp){
   };
 };
 
-parseExp('abc[^123]');
+parseExp('abc[\\[123]');
 
 module.exports = parseExp;

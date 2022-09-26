@@ -1,17 +1,30 @@
 /**
  * 
+ * @param {*} props 
+ * @returns 返回节点
+ */
+function NodeInterface(props){
+  return Object.assign(Object.create(null), {
+    meta : true,
+    type : '',
+    value : '',
+    ...props
+  });
+}
+
+/**
+ * 
  * @param {*} min 
  * @param {*} max 
  * @returns 字符次数节点
  */
 const QuantifierNode = function(min = 0, max = -1, isLazy = false){
-  return {
-    isMeta : true,
-    isQuantifier : true,
+  return NodeInterface({
+    type : 'quantifier',
     isLazy,
     min, 
     max
-  };
+  });
 };
 
 /**
@@ -20,11 +33,10 @@ const QuantifierNode = function(min = 0, max = -1, isLazy = false){
  * @returns 边界节点
  */
 const BoundaryNode = function(value){
-  return {
-    isMeta : true,
-    isBoundary : true,
+  return NodeInterface({
+    type : 'boundary',
     value
-  };
+  });
 };
 
 /**
@@ -33,24 +45,24 @@ const BoundaryNode = function(value){
  * @returns 分组id节点 
  */
 const GroupIdNode = function(value){
-  return {
-    isMeta : true,
-    isGroupId : true,
+  return  NodeInterface({
+    type : 'groupId',
     value
-  };
+  });
 };
 
 /**
  * 
+ * @param {*} groupId 分组号
  * @returns 分组节点
  */
-const GroupNode = function(value = []){
-  return {
-    isMeta : true,
-    isGroup : true,
-    isCatch : true,
+const GroupNode = function(groupId = 1, isCatch = true, value = []){
+  return NodeInterface({
+    type : 'group',
+    isCatch,
+    groupId,
     value
-  };
+  });
 };
 
 /**
@@ -61,13 +73,12 @@ const GroupNode = function(value = []){
  * @returns 断言节点
  */
 const AssertionsNode = function(value = [], isNone = false, isPositive = true){
-  return {
-    isMeta : true,
-    isAssert : true,
+  return NodeInterface({
+    type : 'assertions',
     isNone,
     isPositive,
     value
-  };
+  });
 };
 
 /**
@@ -75,13 +86,12 @@ const AssertionsNode = function(value = [], isNone = false, isPositive = true){
  * @param {*} text 
  * @returns 字符集节点
  */
-const CharSetNode = function(isNone = false){
-  return {
-    isMeta : true,
-    isCharSet : true,
+const CharSetNode = function(value = [], isNone = false){
+  return NodeInterface({
+    type : 'charSet',
     isNone,
-    value : []
-  };
+    value 
+  });
 };
 
 /**
@@ -91,11 +101,10 @@ const CharSetNode = function(isNone = false){
  * @returns 范围字符集节点
  */
 const RangeCharSetNode  = function(min = -1, max = -1){
-  return {
-    isMeta : true,
-    isRangeCharSet : true,
+  return NodeInterface({
+    type : 'rangeCharSet',
     min, max
-  };
+  });
 };
 
 /**
@@ -103,12 +112,11 @@ const RangeCharSetNode  = function(min = -1, max = -1){
  * @param {*} text 
  * @returns 预定义字符集节点
  */
-const PresetCharSetNode = function(value){
-  return {
-    isMeta : true,
-    isPresetSet : true,
+const PresetCharSetNode = function(value = ''){
+  return NodeInterface({
+    type : 'presetSet',
     value
-  };
+  });
 };
 
 /**
@@ -116,12 +124,12 @@ const PresetCharSetNode = function(value){
  * @param {*} isOr 是否 或
  * @returns 逻辑节点
  */
-const LogicNode = function(isOr){
-  return {
-    isMeta : true,
-    isLogic : true,
-    isOr
-  };
+const LogicOrNode = function(left = [], right = []){
+  return NodeInterface({
+    type : 'logicOr',
+    left,
+    right,
+  });
 };
 
 /**
@@ -129,11 +137,12 @@ const LogicNode = function(isOr){
  * @param {*} text 
  * @returns 普通字符
  */
-const TextNode = function(value){
-  return {
-    isText : true,
+const CharsNode = function(value){
+  return NodeInterface({
+    meta : false,
+    type : 'text',
     value
-  };
+  });
 };
 
 
@@ -148,6 +157,6 @@ module.exports = {
   GroupNode,
   AssertionsNode,
   GroupIdNode,
-  LogicNode,
-  TextNode
+  LogicOrNode,
+  CharsNode
 };

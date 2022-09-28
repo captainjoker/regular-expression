@@ -4,7 +4,7 @@ const {
   isCharSet
 } = require('./meta');
 const { CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('./expNode');
-
+const ExpNodeError = require('./ExpNodeError');
 
 const INNORMAL = 'INNORMAL';
 const INQUANTIFIER = 'INQUANTIFIER';
@@ -113,7 +113,7 @@ const handleGroupOrAssertExp = function(exp, index){
       } else if ('!' === exp[i]){
         assertType += 2;
       } else {
-        throw Error('正则表达式不合法！分组错误');
+        throw new ExpNodeError(`正则表达式不合法，表达式下标${index}位置“(?${exp[i]}”不是一个正确的分组或者断言！`);
       }
     }
   }
@@ -146,7 +146,7 @@ const parseRangeCharExp = function(expNodeList, preChar, nextChar){
         lastNode.value = lastNode.value.substring(0, lastNode.value.length - 1);
       }
     } else {
-      throw Error(`正则表达式不合法！字符范围错误`);
+      throw new ExpNodeError(`正则表达式不合法，字符范围错误！`);
     }
   } 
   return result;
@@ -199,144 +199,151 @@ const parseExp = function(exp){
     let lastNodeList = envStacks[envStacks.length - 1]?.expNodeList || [];
     return lastNodeList.length ? lastNodeList[lastNodeList.length - 1] : null;
   };
-
-  while (exp[i]){
-    let currentChar = exp[i];
-    let nextChar = exp[i + 1];
-    let preChar = exp[i - 1];
-    if (status === INCHARACTERSET && !([ ']', '\\', '-' ].includes(currentChar))){
-      mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
-      i++;
-      continue;
-    }
-    switch (currentChar){
-      case '\\': 
-        i += handlerEscapes(nextChar, expNodeList);
-        break;
-      case '[':
+  try {
+    while (exp[i]){
+      let currentChar = exp[i];
+      let nextChar = exp[i + 1];
+      let preChar = exp[i - 1];
+      if (status === INCHARACTERSET && !([ ']', '\\', '-' ].includes(currentChar))){
+        mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
+        i++;
+        continue;
+      }
+      switch (currentChar){
+        case '\\': 
+          i += handlerEscapes(nextChar, expNodeList);
+          break;
+        case '[':
         // 当存在[时，即认为开启字符集收集，如未闭合，则认定为表达式不合法
         // 若状态已经是在字符集中， 则当作普通字符处理
-        expNodeList.push(CharSetNode([], nextChar === '^'));
-        i += nextChar === '^' ? 1 : 0;
-        setStacks();
-        status = INCHARACTERSET;
-        break;
-      case ']':
+          expNodeList.push(CharSetNode([], nextChar === '^'));
+          i += nextChar === '^' ? 1 : 0;
+          setStacks();
+          status = INCHARACTERSET;
+          break;
+        case ']':
         // 当处于 INCHARACTERSET 状态时，直接闭合该状态
         // 否则当作普通字符处理
-        if (status === INCHARACTERSET){
-          getLastNodeInStack().value = expNodeList;
-          setStacks(true);
-        } else {
-          mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
-        }
-        break;
-      case '-':
+          if (status === INCHARACTERSET){
+            getLastNodeInStack().value = expNodeList;
+            setStacks(true);
+          } else {
+            mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
+          }
+          break;
+        case '-':
         // 在状态为字符集时判断是否作为范围处理
         // ascii是从小到大，则为范围
         // 否则认定为表达式不合法
         // 两边为空或者一边为空，则当作普通字符处理
-        if (status === INCHARACTERSET){
-          let result = parseRangeCharExp(expNodeList, preChar, nextChar);
-          result && expNodeList.push(RangeCharSetNode(result.min, result.max)) && i++;
-        } else {
-          mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
-        }
-        break;
-      case '*':
+          if (status === INCHARACTERSET){
+            let result = parseRangeCharExp(expNodeList, preChar, nextChar);
+            result && expNodeList.push(RangeCharSetNode(result.min, result.max)) && i++;
+          } else {
+            mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
+          }
+          break;
+        case '*':
         // 生成量词节点
-        expNodeList.push(QuantifierNode(0));
-        break;
-      case '+':
+          expNodeList.push(QuantifierNode(0));
+          break;
+        case '+':
         // 生成量词节点
-        expNodeList.push(QuantifierNode(1));
-        break;
-      case '?':
+          expNodeList.push(QuantifierNode(1));
+          break;
+        case '?':
         // 当上一个节点为 量词节点时，将该量词节点置成非贪婪
         // 当不为量词节点时，本身生成一个新的量词节点
-        if (TokenQIsQuantifier(expNodeList)){
-          expNodeList.push(QuantifierNode(0, 1));
-        }
-        break;
-      case '{':
+          if (TokenQIsQuantifier(expNodeList)){
+            expNodeList.push(QuantifierNode(0, 1));
+          }
+          break;
+        case '{':
         // 判断该”{“是否量词节点开头
         // 是量词节点时生成一个量词节点
         // 不是的时候当作普通字符处理
-        if (isQuantifierExp(exp, i)){
-          setStacks();
-          status = INQUANTIFIER;
-        } else {
-          mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
-        }
-        break;
-      case '}':
+          if (isQuantifierExp(exp, i)){
+            setStacks();
+            status = INQUANTIFIER;
+          } else {
+            mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
+          }
+          break;
+        case '}':
         // 处于量词节点时，闭合
         // 不是的时候当作普通字符处理
-        if (status === INQUANTIFIER){
-          let { min, max } = parseQuantifierExp(expNodeList[0].value);
-          setStacks(true);
-          expNodeList.push(QuantifierNode(min, max));
-        } else {
-          mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
-        }
-        break;
-      case '.':
+          if (status === INQUANTIFIER){
+            let { min, max } = parseQuantifierExp(expNodeList[0].value);
+            setStacks(true);
+            expNodeList.push(QuantifierNode(min, max));
+          } else {
+            mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
+          }
+          break;
+        case '.':
         // 生成预置节点
-        expNodeList.push(PresetCharSetNode(currentChar));
-        break;
-      case '|':
+          expNodeList.push(PresetCharSetNode(currentChar));
+          break;
+        case '|':
         // 生成逻辑或节点
-        expNodeList = [ LogicOrNode(expNodeList) ];
-        setStacks();
-        break;
-      case '^':
+          expNodeList = [ LogicOrNode(expNodeList) ];
+          setStacks();
+          break;
+        case '^':
         // 直接生成边界节点
         // 此处不需要考虑字符集状态
-        expNodeList.push(BoundaryNode(currentChar));
-        break;
-      case '$':
+          expNodeList.push(BoundaryNode(currentChar));
+          break;
+        case '$':
         // 生成边界节点
-        expNodeList.push(BoundaryNode(currentChar));
-        break;
-      case '(': {
-        let assertType = handleGroupOrAssertExp(exp, i);
-        let node = null;
-        if (assertType > 0){
-          node = AssertionsNode([], !(assertType % 2), assertType <= 2);
-          i += assertType <= 2 ? 2 : 3;
-        } else {
-          let isCatch = assertType > -1;
-          groupId += isCatch ? 1 : 0;
-          node = GroupNode(isCatch ? groupId : -1, isCatch);
-          i += isCatch ? 0 : 2;
+          expNodeList.push(BoundaryNode(currentChar));
+          break;
+        case '(': {
+          let assertType = handleGroupOrAssertExp(exp, i);
+          let node = null;
+          if (assertType > 0){
+            node = AssertionsNode([], !(assertType % 2), assertType <= 2);
+            i += assertType <= 2 ? 2 : 3;
+          } else {
+            let isCatch = assertType > -1;
+            groupId += isCatch ? 1 : 0;
+            node = GroupNode(isCatch ? groupId : -1, isCatch);
+            i += isCatch ? 0 : 2;
+          }
+          expNodeList.push(node);
+          setStacks();
+          status = assertType > 0 ? INASSERT : INGROUP;
+          break;
         }
-        expNodeList.push(node);
-        setStacks();
-        status = assertType > 0 ? INASSERT : INGROUP;
-        break;
-      }
-      case ')':
+        case ')':
         // 判断分组内是否存在逻辑或
         // 存在时将当前expNodeList 赋值 给逻辑或节点右手，再闭合逻辑或, expNodeList 指向逻辑或节点
-        if (getLastNodeInStack()?.type === 'logicOr'){
-          getLastNodeInStack().right = expNodeList;
+          if (getLastNodeInStack()?.type === 'logicOr'){
+            getLastNodeInStack().right = expNodeList;
+            setStacks(true);
+          }
+          getLastNodeInStack().value = expNodeList;
           setStacks(true);
-        }
-        getLastNodeInStack().value = expNodeList;
-        setStacks(true);
-        break;
-      default:
-        mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
-        break;
+          break;
+        default:
+          mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
+          break;
+      }
+      i++;
     }
-    i++;
+  } catch (error){
+    if (error instanceof ExpNodeError){
+      let message = error.getErrorMsg();
+      error.setErrorMsg(`${exp}:${message}`);
+    }
+    throw error;
   }
   if (getLastNodeInStack()?.type === 'logicOr'){
     getLastNodeInStack().right = expNodeList;
     setStacks(true);
   }
   if (!expNodeList.length || envStacks.length){
-    throw Error(`[${exp}]不是一个合法的正则表达式！`);
+    throw new ExpNodeError(`${exp}不是一个合法的正则表达式！`);
   }
   return {
     expNodeList,
@@ -344,6 +351,6 @@ const parseExp = function(exp){
   };
 };
 
-parseExp('abc[\\[123]');
+// parseExp('abc(?123)');
 
 module.exports = parseExp;

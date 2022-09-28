@@ -2,7 +2,7 @@ const {
   DescribeChars,
   BoundaryChars,
   CharSetChars
-} = require('./describeChar');
+} = require('../DescribeChar');
 
 const isMeta = function(char){
   let charIsDesc = isDescribe(char);

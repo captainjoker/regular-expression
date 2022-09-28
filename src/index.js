@@ -1,4 +1,4 @@
-const parseExp = require('./parseExp');
+const parseExp = require('./generateNode/parseExp');
 
 module.exports = class RegularExpression {
   constructor(pattern, model) {

@@ -3,8 +3,20 @@ const {
   isBoundary,
   isCharSet
 } = require('./meta');
-const { CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('./expNode');
+const { isNodeType, CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('./expNode');
 const ExpNodeError = require('./ExpNodeError');
+const {
+  QUANTIFIER,
+  // BOUNDARY,
+  // GROUPID,
+  GROUP,
+  // ASSERTIONS,
+  // CHARSET,
+  // PRESETSET,
+  // RANGECHARSET,
+  LOGICOR,
+  CHARS
+} = require('./NodeType');
 
 const INNORMAL = 'INNORMAL';
 const INQUANTIFIER = 'INQUANTIFIER';
@@ -45,10 +57,10 @@ const handlerEscapes = function(nextChar, expNodeList){
  */
 const TokenQIsQuantifier = function(expNodeList){
   let lastNode = expNodeList[expNodeList.length - 1]; 
-  if (!lastNode.meta || lastNode.type === 'group'){
+  if (!lastNode.meta || isNodeType(lastNode, GROUP)){
     return true;
   }
-  if (lastNode.type === 'quantifier'){
+  if (isNodeType(lastNode, QUANTIFIER)){
     lastNode.isLazy = true;
   }
   return false;
@@ -61,7 +73,7 @@ const TokenQIsQuantifier = function(expNodeList){
  */
 const mkCharsNodeIntoExpNodeList = function(text, expNodeList){
   let lastNode = expNodeList[expNodeList.length - 1];
-  if (lastNode?.type === 'text'){
+  if (isNodeType(lastNode, CHARS)){
     lastNode.value = `${lastNode.value}${text}`;
   } else {
     expNodeList.push(CharsNode(text));
@@ -131,7 +143,7 @@ const handleGroupOrAssertExp = function(exp, index){
 const parseRangeCharExp = function(expNodeList, preChar, nextChar){
   let lastNode = expNodeList[expNodeList.length - 1];
   let result = null;
-  if (lastNode?.type === 'text' & nextChar !== ']'){
+  if (isNodeType(lastNode, CHARS) & nextChar !== ']'){
     //上一个节点为普通字符节点
     let min = preChar.charCodeAt();
     let max = nextChar.charCodeAt();
@@ -318,7 +330,7 @@ const parseExp = function(exp){
         case ')':
         // 判断分组内是否存在逻辑或
         // 存在时将当前expNodeList 赋值 给逻辑或节点右手，再闭合逻辑或, expNodeList 指向逻辑或节点
-          if (getLastNodeInStack()?.type === 'logicOr'){
+          if (isNodeType(getLastNodeInStack(), LOGICOR)){
             getLastNodeInStack().right = expNodeList;
             setStacks(true);
           }
@@ -338,7 +350,7 @@ const parseExp = function(exp){
     }
     throw error;
   }
-  if (getLastNodeInStack()?.type === 'logicOr'){
+  while (isNodeType(getLastNodeInStack(), LOGICOR)){
     getLastNodeInStack().right = expNodeList;
     setStacks(true);
   }
@@ -351,6 +363,6 @@ const parseExp = function(exp){
   };
 };
 
-// parseExp('abc(?123)');
+parseExp('abc|def|123|456|789');
 
 module.exports = parseExp;

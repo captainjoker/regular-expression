@@ -1,3 +1,15 @@
+const {
+  QUANTIFIER,
+  BOUNDARY,
+  GROUPID,
+  GROUP,
+  ASSERTIONS,
+  CHARSET,
+  PRESETSET,
+  RANGECHARSET,
+  LOGICOR,
+  CHARS
+} = require('./NodeType');
 /**
  * 
  * @param {*} props 
@@ -21,7 +33,7 @@ function NodeInterface(props){
  */
 const QuantifierNode = function(min = 0, max = -1, isLazy = false){
   return NodeInterface({
-    type : 'quantifier',
+    type : QUANTIFIER,
     isLazy,
     min, 
     max
@@ -35,7 +47,7 @@ const QuantifierNode = function(min = 0, max = -1, isLazy = false){
  */
 const BoundaryNode = function(value){
   return NodeInterface({
-    type : 'boundary',
+    type : BOUNDARY,
     value
   });
 };
@@ -47,7 +59,7 @@ const BoundaryNode = function(value){
  */
 const GroupIdNode = function(value){
   return  NodeInterface({
-    type : 'groupId',
+    type : GROUPID,
     value
   });
 };
@@ -61,7 +73,7 @@ const GroupIdNode = function(value){
  */
 const GroupNode = function(groupId = 1, isCatch = true, value = []){
   return NodeInterface({
-    type : 'group',
+    type : GROUP,
     isCatch,
     groupId,
     value
@@ -77,7 +89,7 @@ const GroupNode = function(groupId = 1, isCatch = true, value = []){
  */
 const AssertionsNode = function(value = [], isNone = false, isPositive = true){
   return NodeInterface({
-    type : 'assertions',
+    type : ASSERTIONS,
     isNone,
     isPositive,
     value
@@ -92,7 +104,7 @@ const AssertionsNode = function(value = [], isNone = false, isPositive = true){
  */
 const CharSetNode = function(value = [], isNone = false){
   return NodeInterface({
-    type : 'charSet',
+    type : CHARSET,
     isNone,
     value 
   });
@@ -106,7 +118,7 @@ const CharSetNode = function(value = [], isNone = false){
  */
 const RangeCharSetNode  = function(min = -1, max = -1){
   return NodeInterface({
-    type : 'rangeCharSet',
+    type : PRESETSET,
     min, max
   });
 };
@@ -118,7 +130,7 @@ const RangeCharSetNode  = function(min = -1, max = -1){
  */
 const PresetCharSetNode = function(value = ''){
   return NodeInterface({
-    type : 'presetSet',
+    type : RANGECHARSET,
     value
   });
 };
@@ -131,7 +143,7 @@ const PresetCharSetNode = function(value = ''){
  */
 const LogicOrNode = function(left = [], right = []){
   return NodeInterface({
-    type : 'logicOr',
+    type : LOGICOR,
     left,
     right,
   });
@@ -145,12 +157,14 @@ const LogicOrNode = function(left = [], right = []){
 const CharsNode = function(value){
   return NodeInterface({
     meta : false,
-    type : 'text',
+    type : CHARS,
     value
   });
 };
 
-
+const isNodeType = function(node, type){
+  return node?.type === type;
+};
 
 
 module.exports = {
@@ -163,5 +177,6 @@ module.exports = {
   AssertionsNode,
   GroupIdNode,
   LogicOrNode,
-  CharsNode
+  CharsNode,
+  isNodeType
 };

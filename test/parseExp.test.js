@@ -1,6 +1,6 @@
-const parseExp = require('../src/parseExp');
-const ExpNodeError = require('../src/ExpNodeError');
-const { CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('../src/expNode');
+const parseExp = require('../src/generateNode/parseExp');
+const ExpNodeError = require('../src/generateNode/ExpNodeError');
+const { CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('../src/generateNode/expNode');
 
 
 describe('parseExp CharsNode', () => {
@@ -286,7 +286,7 @@ describe('parseExp GroupNode GroupIdNode ', () => {
       groupNum : 3
     });
   });
-  
+
   it('abc(?123)', () => {
     expect(() => {
       parseExp('abc(?123)');
@@ -376,6 +376,21 @@ describe('parseExp LogicOrNode', () => {
     expect(parseExp('ac|bd')).toEqual({ 
       expNodeList : [
         LogicOrNode([ CharsNode('ac') ], [ CharsNode('bd') ]),
+      ],
+      groupNum : 0
+    });
+  });
+
+  it('ac|bd|213', () => {
+    expect(parseExp('ac|bd|213')).toEqual({ 
+      expNodeList : [
+        LogicOrNode(
+          [ CharsNode('ac') ], [ 
+            LogicOrNode(
+              [ CharsNode('bd') ], 
+              [ CharsNode('213') ]
+            )
+          ]),
       ],
       groupNum : 0
     });

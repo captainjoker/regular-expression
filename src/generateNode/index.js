@@ -3,16 +3,16 @@ const {
   isBoundary,
   isCharSet
 } = require('./meta');
-const { isNodeType, CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('./expNode');
+const { isNodeType, inNodeTypes, getQuantifierNodeInNode, CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('./expNode');
 const ExpNodeError = require('./ExpNodeError');
 const {
-  QUANTIFIER,
+  // QUANTIFIER,
   // BOUNDARY,
-  // GROUPID,
+  GROUPID,
   GROUP,
   // ASSERTIONS,
-  // CHARSET,
-  // PRESETSET,
+  CHARSET,
+  PRESETSET,
   // RANGECHARSET,
   LOGICOR,
   CHARS
@@ -57,13 +57,34 @@ const handlerEscapes = function(nextChar, expNodeList){
  */
 const TokenQIsQuantifier = function(expNodeList){
   let lastNode = expNodeList[expNodeList.length - 1]; 
-  if (!lastNode.meta || isNodeType(lastNode, GROUP)){
+  let isQuantifier = true;
+  /* if (!lastNode.meta || isNodeType(lastNode, GROUP)){
     return true;
+  } */
+  let quantifierNode = getQuantifierNodeInNode(lastNode);
+  if (quantifierNode){
+    quantifierNode.isLazy = true;
+    isQuantifier = false;
   }
-  if (isNodeType(lastNode, QUANTIFIER)){
-    lastNode.isLazy = true;
+  return isQuantifier;
+};
+
+const handlerQuantifierNodeIntoExpNodeList = function(quantifierNode, expNodeList){
+  let lastNode = expNodeList[expNodeList.length - 1];
+  if (!lastNode || inNodeTypes(lastNode, [ GROUP, GROUPID, CHARSET, PRESETSET, LOGICOR, CHARS ])){
+    if (isNodeType(lastNode, CHARS)){
+      let valueLength = lastNode.value.length;
+      if (valueLength !== 1){
+        let lastChar = lastNode.value[valueLength - 1];
+        lastNode.value = lastNode.value.substring(0, valueLength - 1);
+        lastNode = CharsNode(lastChar);
+        expNodeList.push(lastNode);
+      }
+    }
+    lastNode.quantifierNode = quantifierNode;
+  } else {
+    throw new ExpNodeError(`没有可重复的字符！`);
   }
-  return false;
 };
 
 /**
@@ -73,7 +94,7 @@ const TokenQIsQuantifier = function(expNodeList){
  */
 const mkCharsNodeIntoExpNodeList = function(text, expNodeList){
   let lastNode = expNodeList[expNodeList.length - 1];
-  if (isNodeType(lastNode, CHARS)){
+  if (isNodeType(lastNode, CHARS) && !getQuantifierNodeInNode(lastNode)){
     lastNode.value = `${lastNode.value}${text}`;
   } else {
     expNodeList.push(CharsNode(text));
@@ -125,7 +146,7 @@ const handleGroupOrAssertExp = function(exp, index){
       } else if ('!' === exp[i]){
         assertType += 2;
       } else {
-        throw new ExpNodeError(`正则表达式不合法，表达式下标${index}位置“(?${exp[i]}”不是一个正确的分组或者断言！`);
+        throw new ExpNodeError(`表达式下标${index}位置“(?${exp[i]}”不是一个正确的分组或者断言！`);
       }
     }
   }
@@ -158,7 +179,7 @@ const parseRangeCharExp = function(expNodeList, preChar, nextChar){
         lastNode.value = lastNode.value.substring(0, lastNode.value.length - 1);
       }
     } else {
-      throw new ExpNodeError(`正则表达式不合法，字符范围错误！`);
+      throw new ExpNodeError(`字符范围错误！`);
     }
   } 
   return result;
@@ -179,7 +200,7 @@ const parseQuantifierExp = function(exp){
 
 
 
-const parseExp = function(exp){
+const generateNode = function(exp){
   let expNodeList = [];
   let status = INNORMAL;
   let i = 0;
@@ -257,17 +278,20 @@ const parseExp = function(exp){
           break;
         case '*':
         // 生成量词节点
-          expNodeList.push(QuantifierNode(0));
+          // expNodeList.push(QuantifierNode(0));
+          handlerQuantifierNodeIntoExpNodeList(QuantifierNode(0), expNodeList);
           break;
         case '+':
         // 生成量词节点
-          expNodeList.push(QuantifierNode(1));
+          // expNodeList.push(QuantifierNode(1));
+          handlerQuantifierNodeIntoExpNodeList(QuantifierNode(1), expNodeList);
           break;
         case '?':
         // 当上一个节点为 量词节点时，将该量词节点置成非贪婪
         // 当不为量词节点时，本身生成一个新的量词节点
           if (TokenQIsQuantifier(expNodeList)){
-            expNodeList.push(QuantifierNode(0, 1));
+            // expNodeList.push(QuantifierNode(0, 1));
+            handlerQuantifierNodeIntoExpNodeList(QuantifierNode(0, 1), expNodeList);
           }
           break;
         case '{':
@@ -287,7 +311,8 @@ const parseExp = function(exp){
           if (status === INQUANTIFIER){
             let { min, max } = parseQuantifierExp(expNodeList[0].value);
             setStacks(true);
-            expNodeList.push(QuantifierNode(min, max));
+            // expNodeList.push(QuantifierNode(min, max));
+            handlerQuantifierNodeIntoExpNodeList(QuantifierNode(min, max), expNodeList);
           } else {
             mkCharsNodeIntoExpNodeList(currentChar, expNodeList);
           }
@@ -346,7 +371,7 @@ const parseExp = function(exp){
   } catch (error){
     if (error instanceof ExpNodeError){
       let message = error.getErrorMsg();
-      error.setErrorMsg(`${exp}:${message}`);
+      error.setErrorMsg(`非法表达式：${exp}:${message}`);
     }
     throw error;
   }
@@ -363,6 +388,5 @@ const parseExp = function(exp){
   };
 };
 
-parseExp('abc|def|123|456|789');
-
-module.exports = parseExp;
+// console.log(generateNode('abc{1,3}f'));
+module.exports = generateNode;

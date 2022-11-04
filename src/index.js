@@ -1,24 +1,34 @@
-const parseExp = require('./generateNode/parseExp');
+const generateNode = require('./generateNode');
 
-module.exports = class RegularExpression {
+const MatchHelper = require('./match');
+
+
+
+class RegularExpression {
   constructor(pattern, model) {
     this.pattern = pattern;
     this.model = model;
-    this.expArr = parseExp(pattern);
+    let {
+      expNodeList,
+      groupNum
+    } = generateNode(pattern);
+    this.expNodeList = expNodeList;
+    this.groupNum = groupNum;
+    this.lastIndex = 0;
+    this.lastItem = '';
   }
     
   exec(text) {
-    this.text = text;
+    return this.run(text);
   }
 
-  run(){
-    let index = 0;
-    let { pattern } = this;
-    while (index > pattern.length){ 
-      index++; 
-    }
+  run(text){
+    let { expNodeList, groupNum } = this;
+    let result = new MatchHelper(expNodeList, groupNum, text).exec();
+    return result;
   }
-  static test(a, b) {
-    return a + b;
-  }
-};
+}
+
+// console.log(new RegularExpression('abc{1,3}d??').exec('abccd'));
+
+module.exports = RegularExpression;

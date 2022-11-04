@@ -57,10 +57,11 @@ const BoundaryNode = function(value){
  * @param {*} value 
  * @returns 分组id节点 
  */
-const GroupIdNode = function(value){
+const GroupIdNode = function(value, quantifierNode = null){
   return  NodeInterface({
     type : GROUPID,
-    value
+    value,
+    quantifierNode
   });
 };
 
@@ -71,12 +72,13 @@ const GroupIdNode = function(value){
  * @param {*} value 
  * @returns 分组节点
  */
-const GroupNode = function(groupId = 1, isCatch = true, value = []){
+const GroupNode = function(groupId = 1, isCatch = true, value = [], quantifierNode = null){
   return NodeInterface({
     type : GROUP,
     isCatch,
     groupId,
-    value
+    value,
+    quantifierNode
   });
 };
 
@@ -102,11 +104,12 @@ const AssertionsNode = function(value = [], isNone = false, isPositive = true){
  * @param {*} isNone 是否非
  * @returns 字符集节点
  */
-const CharSetNode = function(value = [], isNone = false){
+const CharSetNode = function(value = [], isNone = false, quantifierNode = null){
   return NodeInterface({
     type : CHARSET,
     isNone,
-    value 
+    value,
+    quantifierNode
   });
 };
 
@@ -118,7 +121,7 @@ const CharSetNode = function(value = [], isNone = false){
  */
 const RangeCharSetNode  = function(min = -1, max = -1){
   return NodeInterface({
-    type : PRESETSET,
+    type : RANGECHARSET,
     min, max
   });
 };
@@ -128,10 +131,11 @@ const RangeCharSetNode  = function(min = -1, max = -1){
  * @param {*} value 
  * @returns 预定义字符集节点
  */
-const PresetCharSetNode = function(value = ''){
+const PresetCharSetNode = function(value = '', quantifierNode = null){
   return NodeInterface({
-    type : RANGECHARSET,
-    value
+    type : PRESETSET,
+    value,
+    quantifierNode,
   });
 };
 
@@ -145,7 +149,7 @@ const LogicOrNode = function(left = [], right = []){
   return NodeInterface({
     type : LOGICOR,
     left,
-    right,
+    right
   });
 };
 
@@ -154,17 +158,44 @@ const LogicOrNode = function(left = [], right = []){
  * @param {*} text 
  * @returns 普通字符
  */
-const CharsNode = function(value){
+const CharsNode = function(value, quantifierNode = null){
   return NodeInterface({
     meta : false,
     type : CHARS,
-    value
+    value,
+    quantifierNode
   });
 };
 
+/**
+ * 
+ * @param {*} node 
+ * @param {*} type 
+ * @returns node是否type类型
+ */
 const isNodeType = function(node, type){
   return node?.type === type;
 };
+
+/**
+ * 
+ * @param {*} node 
+ * @param {*} types 
+ * @returns node是否属于指定类型
+ */
+const inNodeTypes = function(node, types = []){
+  return types.includes(node?.type);
+};
+
+/**
+ * 
+ * @param {*} node 
+ * @returns 获取node下面的数量节点
+ */
+const getQuantifierNodeInNode = function(node){
+  return node?.quantifierNode; 
+};
+
 
 
 module.exports = {
@@ -178,5 +209,7 @@ module.exports = {
   GroupIdNode,
   LogicOrNode,
   CharsNode,
-  isNodeType
+  isNodeType,
+  inNodeTypes,
+  getQuantifierNodeInNode
 };

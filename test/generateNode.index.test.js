@@ -1,11 +1,11 @@
-const parseExp = require('../src/generateNode/parseExp');
+const generateNode = require('../src/generateNode');
 const ExpNodeError = require('../src/generateNode/ExpNodeError');
 const { CharsNode, GroupNode, GroupIdNode, AssertionsNode, BoundaryNode, CharSetNode, RangeCharSetNode, PresetCharSetNode, QuantifierNode, LogicOrNode } = require('../src/generateNode/expNode');
 
 
-describe('parseExp CharsNode', () => {
+describe('generateNode CharsNode', () => {
   it('abc', () => {
-    expect(parseExp('abc')).toEqual({ 
+    expect(generateNode('abc')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
       ],
@@ -14,9 +14,9 @@ describe('parseExp CharsNode', () => {
   });
 });
 
-describe('parseExp CharsetNode', () => {
+describe('generateNode CharsetNode', () => {
   it('abc[123]', () => {
-    expect(parseExp('abc[123]')).toEqual({ 
+    expect(generateNode('abc[123]')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         CharSetNode([
@@ -28,7 +28,7 @@ describe('parseExp CharsetNode', () => {
   });
 
   it('abc[^123]', () => {
-    expect(parseExp('abc[^123]')).toEqual({ 
+    expect(generateNode('abc[^123]')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         CharSetNode([
@@ -40,7 +40,7 @@ describe('parseExp CharsetNode', () => {
   });
 
   it('abc[\\[123]', () => {
-    expect(parseExp('abc[\\[123]')).toEqual({ 
+    expect(generateNode('abc[\\[123]')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         CharSetNode([
@@ -52,9 +52,9 @@ describe('parseExp CharsetNode', () => {
   });
 });
 
-describe('parseExp PresetNode', () => {
+describe('generateNode PresetNode', () => {
   it('abc\\w123', () => {
-    expect(parseExp('abc\\w123')).toEqual({ 
+    expect(generateNode('abc\\w123')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         PresetCharSetNode('w'),
@@ -65,7 +65,7 @@ describe('parseExp PresetNode', () => {
   });
 
   it('abc.123', () => {
-    expect(parseExp('abc.123')).toEqual({ 
+    expect(generateNode('abc.123')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         PresetCharSetNode('.'),
@@ -76,9 +76,9 @@ describe('parseExp PresetNode', () => {
   });
 });
 
-describe('parseExp RangeCharSetNode', () => {
+describe('generateNode RangeCharSetNode', () => {
   it('abc[1231-9a-z]', () => {
-    expect(parseExp('abc[1231-9a-z]')).toEqual({ 
+    expect(generateNode('abc[1231-9a-z]')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         CharSetNode([
@@ -92,7 +92,7 @@ describe('parseExp RangeCharSetNode', () => {
   });
 
   it('abc[[a-z]', () => {
-    expect(parseExp('abc[[a-z]')).toEqual({ 
+    expect(generateNode('abc[[a-z]')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         CharSetNode([
@@ -104,7 +104,7 @@ describe('parseExp RangeCharSetNode', () => {
     });
   });
   it('abc[[a-z]]-', () => {
-    expect(parseExp('abc[[a-z]]-')).toEqual({ 
+    expect(generateNode('abc[[a-z]]-')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         CharSetNode([
@@ -119,20 +119,20 @@ describe('parseExp RangeCharSetNode', () => {
 
   it('abc[[a-z123', () => {
     expect(() => {
-      parseExp('abc[[a-z123');
+      generateNode('abc[[a-z123');
     }).toThrow(ExpNodeError);
   });
 
   it('abc[z-a]', () => {
     expect(() => {
-      parseExp('abc[z-a]');
+      generateNode('abc[z-a]');
     }).toThrow(ExpNodeError);
   });
 });
 
-describe('parseExp BoundaryNode', () => {
+describe('generateNode BoundaryNode', () => {
   it('^abc$', () => {
-    expect(parseExp('^abc$')).toEqual({ 
+    expect(generateNode('^abc$')).toEqual({ 
       expNodeList : [
         BoundaryNode('^'),
         CharsNode('abc'),
@@ -143,7 +143,7 @@ describe('parseExp BoundaryNode', () => {
   });
 
   it('\\babc\\B', () => {
-    expect(parseExp('\\babc\\B')).toEqual({ 
+    expect(generateNode('\\babc\\B')).toEqual({ 
       expNodeList : [
         BoundaryNode('b'),
         CharsNode('abc'),
@@ -154,29 +154,29 @@ describe('parseExp BoundaryNode', () => {
   });
 });
 
-describe('parseExp QuantifierNode', () => {
+describe('generateNode QuantifierNode', () => {
   it('abc{1,3}', () => {
-    expect(parseExp('abc{1,3}')).toEqual({ 
+    expect(generateNode('abc{1,3}')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(1, 3)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(1, 3))
       ],
       groupNum : 0
     });
   });
 
   it('abc{1{,3}', () => {
-    expect(parseExp('abc{1{,3}')).toEqual({ 
+    expect(generateNode('abc{1{,3}')).toEqual({ 
       expNodeList : [
-        CharsNode('abc{1'),
-        QuantifierNode(0, 3)
+        CharsNode('abc{'),
+        CharsNode('1', QuantifierNode(0, 3)),
       ],
       groupNum : 0
     });
   });
 
   it('abc{1{a,3}', () => {
-    expect(parseExp('abc{a,3}')).toEqual({ 
+    expect(generateNode('abc{a,3}')).toEqual({ 
       expNodeList : [
         CharsNode('abc{a,3}'),
       ],
@@ -184,91 +184,168 @@ describe('parseExp QuantifierNode', () => {
     });
   });
 
-  it('abc{,3}', () => {
-    expect(parseExp('abc{,3}')).toEqual({ 
+  it('abc{1,3}f', () => {
+    expect(generateNode('abc{1,3}f')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(0, 3)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(1, 3)),
+        CharsNode('f'),
+      ],
+      groupNum : 0
+    });
+  });
+
+  it('abc{,3}', () => {
+    expect(generateNode('abc{,3}')).toEqual({ 
+      expNodeList : [
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(0, 3)),
       ],
       groupNum : 0
     });
   });
 
   it('abc{2}', () => {
-    expect(parseExp('abc{2}')).toEqual({ 
+    expect(generateNode('abc{2}')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(2, -1)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(2, -1)),
       ],
       groupNum : 0
     });
   });
 
   it('abc{2,}', () => {
-    expect(parseExp('abc{2,}')).toEqual({ 
+    expect(generateNode('abc{2,}')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(2, -1)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(2, -1)),
+        
       ],
       groupNum : 0
     });
   });
 
   it('abc{2,}?', () => {
-    expect(parseExp('abc{2,}?')).toEqual({ 
+    expect(generateNode('abc{2,}?')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(2, -1, true)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(2, -1, true)),
       ],
       groupNum : 0
     });
   });
 
   it('abc?', () => {
-    expect(parseExp('abc?')).toEqual({ 
+    expect(generateNode('abc?')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(0, 1)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(0, 1)),
+        
       ],
       groupNum : 0
     });
   });
 
   it('abc+', () => {
-    expect(parseExp('abc+')).toEqual({ 
+    expect(generateNode('abc+')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(1)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(1)),
+        
       ],
       groupNum : 0
     });
   });
 
   it('abc+?', () => {
-    expect(parseExp('abc+?')).toEqual({ 
+    expect(generateNode('abc+?')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(1, -1, true)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(1, -1, true)),
+        
       ],
       groupNum : 0
     });
   });
 
   it('abc*?', () => {
-    expect(parseExp('abc*?')).toEqual({ 
+    expect(generateNode('abc*?')).toEqual({ 
       expNodeList : [
-        CharsNode('abc'),
-        QuantifierNode(0, -1, true)
+        CharsNode('ab'),
+        CharsNode('c', QuantifierNode(0, -1, true)),
+        
       ],
       groupNum : 0
     });
   });
+
+  it('(abc)*', () => {
+    expect(generateNode('(abc)*')).toEqual({ 
+      expNodeList : [
+        GroupNode(1, true, [
+          CharsNode('abc')
+        ], QuantifierNode(0))
+      ],
+      groupNum : 1
+    });
+  });
+
+  it('\\w*', () => {
+    expect(generateNode('\\w*')).toEqual({ 
+      expNodeList : [
+        PresetCharSetNode('w', QuantifierNode(0))
+      ],
+      groupNum : 0
+    });
+  });
+
+  it('[abc]*', () => {
+    expect(generateNode('[abc]*')).toEqual({ 
+      expNodeList : [
+        CharSetNode([
+          CharsNode('abc')
+        ], false, QuantifierNode(0))
+      ],
+      groupNum : 0
+    });
+  });
+  
+  it('(abc)*|123', () => {
+    expect(generateNode('(abc)*|123')).toEqual({ 
+      expNodeList : [
+        LogicOrNode(
+          [ 
+            GroupNode(1, true, [
+              CharsNode('abc')
+            ], QuantifierNode(0)) 
+          ],
+          [ CharsNode('123') ]
+        )
+       
+      ],
+      groupNum : 1
+    });
+  });
+
+  it('(abc)*\\1+', () => {
+    expect(generateNode('(abc)*\\1+')).toEqual({ 
+      expNodeList : [
+        GroupNode(1, true, [
+          CharsNode('abc')
+        ], QuantifierNode(0)),
+        GroupIdNode(1, QuantifierNode(1))
+      ],
+      groupNum : 1
+    });
+  });
+  
 });
 
 
-describe('parseExp GroupNode GroupIdNode ', () => {
+describe('generateNode GroupNode GroupIdNode ', () => {
   it('abc(123)(456(789))\\1\\2', () => {
-    expect(parseExp('abc(123)(456(789))\\1\\2')).toEqual({ 
+    expect(generateNode('abc(123)(456(789))\\1\\2')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         GroupNode(1, true, [
@@ -289,18 +366,18 @@ describe('parseExp GroupNode GroupIdNode ', () => {
 
   it('abc(?123)', () => {
     expect(() => {
-      parseExp('abc(?123)');
+      generateNode('abc(?123)');
     }).toThrow(ExpNodeError);
   });
 
   it('abc(123', () => {
     expect(() => {
-      parseExp('abc(123');
+      generateNode('abc(123');
     }).toThrow(ExpNodeError);
   });
 
   it('abc(?:123)', () => {
-    expect(parseExp('abc(?:123)')).toEqual({ 
+    expect(generateNode('abc(?:123)')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         GroupNode(-1, false, [
@@ -312,9 +389,9 @@ describe('parseExp GroupNode GroupIdNode ', () => {
   });
 });
 
-describe('parseExp AssertionsNode', () => {
+describe('generateNode AssertionsNode', () => {
   it('abc(?=123)', () => {
-    expect(parseExp('abc(?=123)')).toEqual({ 
+    expect(generateNode('abc(?=123)')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         AssertionsNode([
@@ -326,7 +403,7 @@ describe('parseExp AssertionsNode', () => {
   });
 
   it('abc(?!123)', () => {
-    expect(parseExp('abc(?!123)')).toEqual({ 
+    expect(generateNode('abc(?!123)')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         AssertionsNode([
@@ -338,7 +415,7 @@ describe('parseExp AssertionsNode', () => {
   });
 
   it('abc(?<=123)', () => {
-    expect(parseExp('abc(?<=123)')).toEqual({ 
+    expect(generateNode('abc(?<=123)')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         AssertionsNode([
@@ -349,7 +426,7 @@ describe('parseExp AssertionsNode', () => {
     });
   });
   it('abc(?<!123)', () => {
-    expect(parseExp('abc(?<!123)')).toEqual({ 
+    expect(generateNode('abc(?<!123)')).toEqual({ 
       expNodeList : [
         CharsNode('abc'),
         AssertionsNode([
@@ -362,9 +439,9 @@ describe('parseExp AssertionsNode', () => {
 });
 
 
-describe('parseExp LogicOrNode', () => {
+describe('generateNode LogicOrNode', () => {
   it('a|b', () => {
-    expect(parseExp('a|b')).toEqual({ 
+    expect(generateNode('a|b')).toEqual({ 
       expNodeList : [
         LogicOrNode([ CharsNode('a') ], [ CharsNode('b') ]),
       ],
@@ -373,7 +450,7 @@ describe('parseExp LogicOrNode', () => {
   });
 
   it('ac|bd', () => {
-    expect(parseExp('ac|bd')).toEqual({ 
+    expect(generateNode('ac|bd')).toEqual({ 
       expNodeList : [
         LogicOrNode([ CharsNode('ac') ], [ CharsNode('bd') ]),
       ],
@@ -382,10 +459,11 @@ describe('parseExp LogicOrNode', () => {
   });
 
   it('ac|bd|213', () => {
-    expect(parseExp('ac|bd|213')).toEqual({ 
+    expect(generateNode('ac|bd|213')).toEqual({ 
       expNodeList : [
         LogicOrNode(
-          [ CharsNode('ac') ], [ 
+          [ CharsNode('ac') ], 
+          [ 
             LogicOrNode(
               [ CharsNode('bd') ], 
               [ CharsNode('213') ]
@@ -397,7 +475,7 @@ describe('parseExp LogicOrNode', () => {
   });
 
   it('(ac|b)d', () => {
-    expect(parseExp('(ac|b)d')).toEqual({ 
+    expect(generateNode('(ac|b)d')).toEqual({ 
       expNodeList : [
         GroupNode(1, true, [
           LogicOrNode([ CharsNode('ac') ], [ CharsNode('b') ]),
@@ -409,7 +487,7 @@ describe('parseExp LogicOrNode', () => {
   });
 
   it('e(ac|bd)f', () => {
-    expect(parseExp('e(ac|bd)f')).toEqual({ 
+    expect(generateNode('e(ac|bd)f')).toEqual({ 
       expNodeList : [
         CharsNode('e'),
         GroupNode(1, true, [
@@ -422,13 +500,13 @@ describe('parseExp LogicOrNode', () => {
   });
 
   it('e(ac{2,4}|bd[1-3])f', () => {
-    expect(parseExp('e(ac{2,4}|bd[1-3])f')).toEqual({ 
+    expect(generateNode('e(ac{2,4}|bd[1-3])f')).toEqual({ 
       expNodeList : [
         CharsNode('e'),
         GroupNode(1, true, [
           LogicOrNode([ 
-            CharsNode('ac'),
-            QuantifierNode(2, 4)
+            CharsNode('a'),
+            CharsNode('c', QuantifierNode(2, 4)),
           ], [ 
             CharsNode('bd'),
             CharSetNode([
@@ -443,11 +521,12 @@ describe('parseExp LogicOrNode', () => {
   });
 
   it('eac{2,4}|bd[1-3]f', () => {
-    expect(parseExp('eac{2,4}|bd[1-3]f')).toEqual({ 
+    expect(generateNode('eac{2,4}|bd[1-3]f')).toEqual({ 
       expNodeList : [
         LogicOrNode([ 
-          CharsNode('eac'),
-          QuantifierNode(2, 4)
+          CharsNode('ea'),
+          CharsNode('c', QuantifierNode(2, 4)),
+          
         ], [ 
           CharsNode('bd'),
           CharSetNode([
@@ -461,14 +540,14 @@ describe('parseExp LogicOrNode', () => {
   });
 
   it('e(ac{2,4}|b(d[1-3]|a+))f', () => {
-    expect(parseExp('e(ac{2,4}|b(d[1-3]|a+))f')).toEqual({ 
+    expect(generateNode('e(ac{2,4}|b(d[1-3]|a+))f')).toEqual({ 
       expNodeList : [
         CharsNode('e'),
         GroupNode(1, true, [
           LogicOrNode(
             [ 
-              CharsNode('ac'),
-              QuantifierNode(2, 4)
+              CharsNode('a'),
+              CharsNode('c', QuantifierNode(2, 4)),
             ], 
             [ 
               CharsNode('b'),
@@ -481,8 +560,7 @@ describe('parseExp LogicOrNode', () => {
                     ])
                   ],
                   [
-                    CharsNode('a'),
-                    QuantifierNode(1)
+                    CharsNode('a', QuantifierNode(1)),
                   ]
                 ),
               ]),

@@ -12,22 +12,26 @@ const isDescribe = function(char){
   return DescribeChars[char] !== undefined;
 };
 
-const isNumber = function(str){
-  let asciiCode = str.charCodeAt();
+const isNumber = function(char){
+  let asciiCode = char.charCodeAt();
   return asciiCode <= 57 && asciiCode >= 48;
 };
 
-const isABC = function(str){
-  let asciiCode = str.charCodeAt();
+const isABC = function(char){
+  let asciiCode = char.charCodeAt();
   return (asciiCode <= 90 && asciiCode >= 65) || (asciiCode <= 122 && asciiCode >= 97);
 };
 
-const isBoundary = function(str){
-  return BoundaryChars.includes(str);
+const isBoundary = function(char){
+  return BoundaryChars.includes(char);
 };
 
-const isCharSet = function(str){
-  return CharSetChars.includes(str);
+const isCharSet = function(char){
+  return CharSetChars.includes(char);
+};
+
+const isWordChar = function(char){
+  return isABC(char) || isNumber(char) || char === '_';
 };
 
 module.exports = {
@@ -36,5 +40,6 @@ module.exports = {
   isNumber,
   isABC,
   isBoundary,
-  isCharSet
+  isCharSet,
+  isWordChar
 };

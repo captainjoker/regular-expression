@@ -41,5 +41,6 @@ module.exports = {
     'space-in-parens' : 2,
     'space-unary-ops' : 2,
     'switch-colon-spacing' : 2,
+    'no-fallthrough' : [ 2, { allowEmptyCase: true, commentPattern: 'break[\\s\\w]*omitted' } ]
   }
 };

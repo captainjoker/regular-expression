@@ -3,18 +3,6 @@ const RegularExpression = require('../../src');
 
 describe('exec', () => {
 
-  it('abc{1,3}?c -> abcccc', () => {
-    expect(new RegularExpression('abc{1,3}?c').exec('abcccc')).toEqual([ 'abcc' ]);
-  });
-
-  it('abc{0,3}?c -> abcccc', () => {
-    expect(new RegularExpression('abc{0,3}?c').exec('abcccc')).toEqual([ 'abc' ]);
-  });
-
-  it('abc{1,3}c -> abcccc', () => {
-    expect(new RegularExpression('abc{1,3}c').exec('abcccc')).toEqual([ 'abcccc' ]);
-  });
-
   it('a(b)c{1,3}c -> abcccc', () => {
     expect(new RegularExpression('a(b)c{1,3}c').exec('abcccc')).toEqual([ 'abcccc', 'b' ]);
   });
@@ -53,6 +41,18 @@ describe('exec', () => {
 
   it('d((?:a)(b){1,3}){1,2}f -> efdabbfcd', () => {
     expect(new RegularExpression('d((?:a)(b){1,3}){1,2}f').exec('efdabbabbfcd')).toEqual([ 'dabbabbf', 'abb', 'b' ]);
+  });
+
+  it('d((a)(b){1,3})\\2f -> dabbbafcd', () => {
+    expect(new RegularExpression('d((a)(b){1,3})\\2f').exec('dabbbafcd')).toEqual([ 'dabbbaf', 'abbb', 'a', 'b' ]);
+  });
+
+  it('d((a)(b){1,3})\\1f -> dabbbabbbfcd', () => {
+    expect(new RegularExpression('d((a)(b){1,3})\\1f').exec('dabbbabbbfcd')).toEqual([ 'dabbbabbbf', 'abbb', 'a', 'b' ]);
+  });
+
+  it('d\\2((a)(b){1,3})f -> dabbbfcd', () => {
+    expect(new RegularExpression('d\\2((a)(b){1,3})f').exec('dabbbfcd')).toEqual([ 'dabbbf', 'abbb', 'a', 'b' ]);
   });
 
 });

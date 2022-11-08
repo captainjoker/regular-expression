@@ -58,6 +58,7 @@ module.exports = class MatchHelper{
           this.handlerChar(node);
           break;
         case BOUNDARY:
+          this.handlerChar(node);
           break;
         case GROUPID:
           this.handlerChar(node);
@@ -155,13 +156,12 @@ module.exports = class MatchHelper{
     }
   }
   matchChars(node, successCallback, failCallback){
-    let { value } = node;
-    let result = this.compareChars(this.text, this.textIndex, node);    
-    if (result){
+    let matchText = this.compareChars(this.text, this.textIndex, node);    
+    if (matchText !== null){
       // 匹配成功，不推入安全点，直接下次循环处理
       this.charTimes++;
-      this.matchedText += value;
-      this.textIndex += value.length;
+      this.matchedText += matchText;
+      this.textIndex += matchText.length;
       successCallback && successCallback();
     } else {
       failCallback ? failCallback() : this.backSafePoint();
@@ -171,8 +171,7 @@ module.exports = class MatchHelper{
   compareChars(text, startIndex, node){
     let { value, type } = node;
     let index = 0;
-    let result = false;
-    let char = text[startIndex];
+    let matchText = null;
     switch (type){
       case CHARS:
         while (index < value.length){
@@ -181,17 +180,17 @@ module.exports = class MatchHelper{
           }
           index++;
         }
-        result = index === value.length;
+        matchText = index === value.length ? value : matchText;
         break;
       case GROUPID:
-        result = equal(char, node, this.groups[value - 1]);
+        matchText = equal(text, startIndex, node, value <= this.groups.length ? this.groups[value - 1] || '' : undefined);
         break;
       default:
-        result = equal(char, node);
+        matchText = equal(text, startIndex, node);
         break;
     }
    
-    return result;
+    return matchText;
   }
   handlerChar(node){
     let { quantifierNode } = node;

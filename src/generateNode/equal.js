@@ -12,8 +12,13 @@ const {
 const { 
   isWordChar,
   isNumber,
-  isABC
+  // isABC,
+  isSpace
 } = require('./meta');
+
+const doReverse = function(result, reverse = false){
+  return reverse ? !result : result;
+};
 
 const nodeEqual = {
   [GROUPID] : (text, startIndex, node, realValue) => {
@@ -35,7 +40,7 @@ const nodeEqual = {
     let { value } = node;
     let matchText = null;
     let char = text[index];
-    let isUn = false;
+    let reverse = false;
     switch (value){
       case '^':
         matchText = index === 0 ? '' : null;
@@ -44,12 +49,10 @@ const nodeEqual = {
         matchText = index === text.length ? '' : null; 
         break;
       case 'b':
-        matchText = index === 0 || index === text.length || !isWordChar(char) ? '' : null;
-        break;
-        // isUn = true;
+        reverse = true;
         // break omitted
       case 'B':
-        matchText = index === 0 || index === text.length || !isWordChar(char) ? null : '';
+        matchText = doReverse(index === 0 || index === text.length || !isWordChar(char), reverse) ? null : '';
         break;
     }
     return matchText;
@@ -57,31 +60,47 @@ const nodeEqual = {
   [PRESETSET] : (text, index, node) => {
     let { value } = node;
     let matchText = null;
-    switch (value){
-      case 'd':
-        matchText = isNumber();
-        break;
-      case 'D':
-        break;
-      case 's':
-        break;
-      case 'S':
-        break;
-      case 'w':
-        break;
-      case 'W':
-        break;
-      case 'f':
-        break;
-      case 'n':
-        break;
-      case 'r':
-        break;
-      case 'v':
-        break;
-      case 't':
-        break;
-    }
+    let char = text[index];
+    if (char !== undefined){
+      let reverse = false;
+      let unicode = char.charCodeAt();
+      switch (value){
+        case 'D':
+          reverse  = true;
+          // break omitted
+        case 'd':
+          matchText = doReverse(isNumber(char), reverse) ? char : null;
+          break;
+        case 'S':
+          reverse  = true;
+          // break omitted;
+        case 's':
+          matchText = doReverse(isSpace(char), reverse)  ? char : null;
+          break;
+        case 'W':
+          reverse  = true;
+          // break omitted;
+          break;
+        case 'w':
+          matchText = doReverse(isWordChar(char), reverse)  ? char : null;
+          break;
+        case 'f':
+          matchText = unicode === 12 ? char : null; 
+          break;
+        case 'n':
+          matchText = unicode === 10 ? char : null; 
+          break;
+        case 'r':
+          matchText = unicode === 13 ? char : null; 
+          break;
+        case 'v':
+          matchText = unicode === 11 ? char : null; 
+          break;
+        case 't':
+          matchText = unicode === 9 ? char : null; 
+          break;
+      }
+    } 
     return matchText;
   }
 };

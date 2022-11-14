@@ -34,6 +34,12 @@ const isWordChar = function(char){
   return isABC(char) || isNumber(char) || char === '_';
 };
 
+const isSpace = function(char){
+  let unicode = char.charCodeAt();
+  // [ \f\n\r\t\v\u00a0\u1680\u180e\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]
+  return (unicode >= 9 && unicode <= 13) || (unicode >= 8192 && unicode <= 8202) || [ 32, 160, 5760, 6158, 8232, 8233, 8239, 8287, 12288, 65279 ].includes(unicode);
+};
+
 module.exports = {
   isMeta,
   isDescribe,
@@ -41,5 +47,6 @@ module.exports = {
   isABC,
   isBoundary,
   isCharSet,
-  isWordChar
+  isWordChar,
+  isSpace
 };

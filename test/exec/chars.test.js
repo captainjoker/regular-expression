@@ -14,4 +14,8 @@ describe('exec chars', () => {
     expect(new RegularExpression('abcd').exec('dfgabcdfg')).toEqual([ 'abcd' ]);
   });
 
+  it('dfgabcdfg - dfgabcd', () => {
+    expect(new RegularExpression('dfgabcdfg').exec('dfgabcd')).toEqual(null);
+  });
+
 });

@@ -29,6 +29,6 @@ class RegularExpression {
   }
 }
 
-// console.log(new RegularExpression('d\\2((a)(b){1,3})f').exec('dabbbfcd'));
+// console.log(new RegularExpression('ab|cd').exec('ab'));
 
 module.exports = RegularExpression;

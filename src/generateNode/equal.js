@@ -80,7 +80,6 @@ const nodeEqual = {
         case 'W':
           reverse  = true;
           // break omitted;
-          break;
         case 'w':
           matchText = doReverse(isWordChar(char), reverse)  ? char : null;
           break;

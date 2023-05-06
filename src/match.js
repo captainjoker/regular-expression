@@ -77,6 +77,7 @@ module.exports = class MatchHelper{
         case RANGECHARSET:
           break;
         case LOGICOR:
+          this.handlerLogicOr(node);
           break;
       }
       if (!this.matched){
@@ -122,7 +123,6 @@ module.exports = class MatchHelper{
       this.matchedText = stack.matchedText + this.matchedText;
     }
   }
-  // setSafePoint(nextExpNodeIndex = -1, needMatch = true){
   setSafePoint(options = {}){
     this.safePoints.push({
       envStacks : this.envStacks.slice(),
@@ -213,7 +213,6 @@ module.exports = class MatchHelper{
             this.setSafePoint({
               needMatch : true
             });
-            // this.setSafePoint(this.expNodeIndex, true);
             this.charTimes = 0;
             this.expNodeIndex++;
           }
@@ -229,7 +228,6 @@ module.exports = class MatchHelper{
             this.charTimes = 0;
           } else if (this.charTimes >= min){
             // 达到最低次数时，先存入安全点
-            // this.setSafePoint(this.expNodeIndex + 1, true, 0);
             this.setSafePoint({
               expNodeIndex : this.expNodeIndex + 1,
               charTimes : 0
@@ -265,7 +263,6 @@ module.exports = class MatchHelper{
             this.matchGroup(node);
           } else {
             //推入安全点，匹配下一个节点
-            // this.setSafePoint(this.expNodeIndex, true);
             this.setSafePoint({
               needMatch : true,
               groupTimes : 0
@@ -303,7 +300,6 @@ module.exports = class MatchHelper{
         } else if (this.groupTimes >= min){
           // this.endStack();
           // 达到最低次数时，先存入安全点
-          // this.setSafePoint(this.expNodeIndex + 1);
           this.setSafePoint({
             expNodeIndex : this.expNodeIndex + 1
           });
@@ -329,6 +325,14 @@ module.exports = class MatchHelper{
     this.matchedText = '';
     this.groupTextLength = 0;
     // this.groups = [];
+  }
+
+  handlerLogicOr(node){
+    this.setSafePoint();
+    this.expNodeList = node.left;
+    this.expNodeIndex = 0;
+
+
   }
   
 };

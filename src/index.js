@@ -29,6 +29,6 @@ class RegularExpression {
   }
 }
 
-// console.log(new RegularExpression('ab|cd').exec('ab'));
+// console.log(new RegularExpression('a(?!123)').exec('a123'));
 
 module.exports = RegularExpression;

@@ -86,8 +86,8 @@ const GroupNode = function(groupId = 1, isCatch = true, value = [], quantifierNo
  * 
  * @param {*} value 
  * @param {*} isNone 是否不等于
- * @param {*} isPositive 是否正向
- * @returns 断言节点
+ * @param {*} isPositive 是否正向 只支持正向
+ * @returns 断言节点 未考虑quantifierNode(没搞清楚v8 对quantifierNode怎么处理的)
  */
 const AssertionsNode = function(value = [], isNone = false, isPositive = true){
   return NodeInterface({

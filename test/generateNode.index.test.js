@@ -402,6 +402,21 @@ describe('generateNode AssertionsNode', () => {
     });
   });
 
+  it('abc(?=123[a-z])', () => {
+    expect(generateNode('abc(?=123[a-z])')).toEqual({ 
+      expNodeList : [
+        CharsNode('abc'),
+        AssertionsNode([
+          CharsNode('123'),
+          CharSetNode([
+            RangeCharSetNode(97, 122)
+          ])
+        ])
+      ],
+      groupNum : 0
+    });
+  });
+
   it('abc(?!123)', () => {
     expect(generateNode('abc(?!123)')).toEqual({ 
       expNodeList : [

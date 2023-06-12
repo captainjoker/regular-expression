@@ -2,11 +2,11 @@ const {
   BOUNDARY,
   GROUPID,
   // ASSERTIONS,
-  // CHARSET,
+  CHARSET,
   PRESETSET,
-  // RANGECHARSET,
+  RANGECHARSET,
   // LOGICOR,
-  // CHARS
+  CHARS
 } = require('./NodeType');
 
 const { 
@@ -101,7 +101,59 @@ const nodeEqual = {
       }
     } 
     return matchText;
+  },
+  [CHARSET] : (text, index, node) => {
+    let char = text[index];
+    let matchText = null;
+    if (char !== undefined){
+      let asciiCode = char.charCodeAt();
+      let { value } = node;
+      for (let i = 0; i < value.length; i++){
+        let curNode  = value[i];
+        let matched = false;
+        switch (curNode.type){
+          case RANGECHARSET: {
+            matched = inRangeCharSet(asciiCode, curNode);
+            break;
+          }
+          case CHARS: {
+            matched = inChars(char, curNode);
+            break;
+          }
+        }
+        if (matched){
+          matchText = char;
+          break;
+        }
+      }
+    }
+    return matchText;
   }
+};
+
+const inRangeCharSet = function(asciiCode, node){
+  let {
+    min, max
+  } = node;
+  let isMatch = false;
+  if (asciiCode >= min && asciiCode <= max){
+    isMatch = true;
+  }
+  return isMatch;
+};
+
+const inChars = function(char, node){
+  let { value } = node;
+  let index = 0;
+  let isMatch = false;
+  while (index < value.length){
+    if (value[index] === char){
+      isMatch = true;
+      break;
+    }
+    index++;
+  }
+  return isMatch;
 };
 
 const defaultEqual = function(text, startIndex, node){
@@ -117,7 +169,7 @@ const defaultEqual = function(text, startIndex, node){
   return matchText = index === value.length ? value : matchText;
 };
 
-module.exports = function(text, index, node, ...args){
+module.exports = function Equal(text, index, node, ...args){
   let equal = nodeEqual[node.type] || defaultEqual;
   return  equal(text, index, node, ...args);
 };

@@ -6,7 +6,7 @@ const {
   ASSERTIONS,
   CHARSET,
   PRESETSET,
-  RANGECHARSET,
+  // RANGECHARSET,
   LOGICOR,
   CHARS
 } = require('./generateNode/NodeType');
@@ -34,6 +34,7 @@ module.exports = class MatchHelper{
     this.groupTextLength = 0; // 记录分组有贪婪数量节点时，最后一次匹配节点的 matchedText 开始下标，以此来获取存入group的值
     this.matched = true; // 匹配成功标志
     this.needMatch = false; //节点是否需要匹配，用于非贪婪节点标志
+    this.assertIndex = -1; //断言在stack的位置,当检测到不符合时，定位到断言位置
   }
   exec(){
     let result = null;
@@ -67,6 +68,7 @@ module.exports = class MatchHelper{
           this.startGroup(node);
           break;
         case ASSERTIONS:
+          this.startGroup(node);
           break;
         case CHARSET:
           this.handlerChar(node);
@@ -74,8 +76,9 @@ module.exports = class MatchHelper{
         case PRESETSET:
           this.handlerChar(node);
           break;
-        case RANGECHARSET:
-          break;
+        /* case RANGECHARSET:
+          this.handlerChar(node);
+          break; */
         case LOGICOR:
           this.handlerLogicOr(node);
           break;
@@ -90,7 +93,9 @@ module.exports = class MatchHelper{
   
     return  this.matched ? [ this.matchedText, ...this.groups ] : null;
   }
-  setStacks(groupId, isCatch){
+  setStacks({
+    groupId, isCatch, isNone, isPositive, type
+  }){
     this.envStacks.push({
       expNodeList : this.expNodeList,
       expNodeIndex : this.expNodeIndex,
@@ -98,19 +103,24 @@ module.exports = class MatchHelper{
       groupQuantifierNode : this.groupQuantifierNode,
       matchedText : this.matchedText,
       groupTextLength : this.groupTextLength,
-      groupId,
-      isCatch
+      assertIndex : this.assertIndex,
+      textIndex : this.textIndex,
+      groupId, isCatch, isNone, isPositive, type
     });
       
   }
-  endStack(){
+  endStack(stackIndex, isMatch = true){
     if (this.envStacks.length){
       let groupQuantifierNode = this.groupQuantifierNode;
-      let stack = this.envStacks.pop();
+      if (stackIndex){
+        this.envStacks = this.envStacks.slice(0, stackIndex + 1);
+      }
+      let stack  = this.envStacks.pop();
       this.expNodeList = stack.expNodeList;
       this.expNodeIndex = stack.expNodeIndex;
       this.groupTimes = stack.groupTimes;
       this.groupQuantifierNode = stack.groupQuantifierNode;
+      this.assertIndex = stack.assertIndex;
       if (stack.groupId && stack.isCatch){
         let { isLazy = false } = groupQuantifierNode || {};
         if (isLazy){
@@ -118,9 +128,18 @@ module.exports = class MatchHelper{
         } else {
           this.groups[stack.groupId - 1] = this.matchedText.substring(this.groupTextLength);
         }
-      }
+      } 
       this.groupTextLength = stack.groupTextLength;
-      this.matchedText = stack.matchedText + this.matchedText;
+      if (stack.type === ASSERTIONS){
+        if ((stack.isNone && isMatch) || (!stack.isNone && !isMatch)){
+          this.backSafePoint();
+        } else {
+          this.matchedText = stack.matchedText;
+          this.textIndex = stack.textIndex;
+        }
+      } else {
+        this.matchedText = stack.matchedText + this.matchedText;
+      }
     }
   }
   setSafePoint(options = {}){
@@ -140,7 +159,17 @@ module.exports = class MatchHelper{
   }
   backSafePoint(){
     if (!this.safePoints.length){
-      this.matched = false;
+      if (this.assertIndex === -1){
+        this.matched = false;
+      } else {
+        let stack = this.envStacks[this.assertIndex];
+        if (stack.isNone === true){
+          this.endStack(this.assertIndex, false);
+          this.expNodeIndex++;
+        } else {
+          this.matched = false;
+        }
+      }
     } else {
       let safePoint = this.safePoints.pop();
       this.envStacks = safePoint.envStacks;
@@ -316,8 +345,11 @@ module.exports = class MatchHelper{
     }
   }
   matchGroup(node){
-    let { quantifierNode, value, groupId, isCatch } = node;
-    this.setStacks(groupId, isCatch);
+    let { quantifierNode, value, groupId, isCatch, isNone, isPositive, type } = node;
+    this.setStacks({ groupId, isCatch, isNone, isPositive, type });
+    if (type === ASSERTIONS){
+      this.assertIndex = this.envStacks.length - 1;
+    }
     this.groupTimes = 0;
     this.groupQuantifierNode = quantifierNode;
     this.expNodeList = value;
@@ -328,7 +360,9 @@ module.exports = class MatchHelper{
   }
 
   handlerLogicOr(node){
-    this.setSafePoint();
+    this.setSafePoint({
+      expNodeList : node.right
+    });
     this.expNodeList = node.left;
     this.expNodeIndex = 0;
 

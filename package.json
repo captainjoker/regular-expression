@@ -1,5 +1,5 @@
 {
-  "name": "regular-expression",
+  "name": "regular-expression-js",
   "version": "1.0.0",
   "description": "an regular expression parser by javascript",
   "main": "dist/regular-expression.js",

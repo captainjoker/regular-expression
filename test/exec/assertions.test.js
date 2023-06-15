@@ -46,6 +46,10 @@ describe('exec assertions', () => {
     expect(new RegularExpression('abb{1,3}c(?!12{1,3}3)').exec('abbc1223')).toEqual(null);
   });
 
+  it('ab{1,3}c(?!12{1,3}3) - abbc122223', () => {
+    expect(new RegularExpression('abb{1,3}c(?!12{1,3}3)').exec('abbc122223')).toEqual([ 'abbc' ]);
+  });
+
   it('ab{1,3}c(?!12{3,4}3) - abbc1223', () => {
     expect(new RegularExpression('abb{1,3}c(?!12{3,4}3)').exec('abbc1223')).toEqual([ 'abbc' ]);
   });

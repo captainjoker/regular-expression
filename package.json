@@ -2,12 +2,13 @@
   "name": "regular-expression",
   "version": "1.0.0",
   "description": "an regular expression parser by javascript",
-  "main": "index.js",
+  "main": "dist/regular-expression.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "webpack"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,8 @@
   "homepage": "https://github.com/captainjoker/regular-expression#readme",
   "devDependencies": {
     "eslint": "^8.23.0",
-    "jest": "^29.0.1"
+    "jest": "^29.0.1",
+    "webpack": "^5.87.0",
+    "webpack-cli": "^5.1.4"
   }
 }

@@ -489,6 +489,24 @@ describe('generateNode LogicOrNode', () => {
     });
   });
 
+  it('(ac|bd|213)', () => {
+    expect(generateNode('(ac|bd|213)')).toEqual({ 
+      expNodeList : [
+        GroupNode(1, true, [
+          LogicOrNode(
+            [ CharsNode('ac') ], 
+            [ 
+              LogicOrNode(
+                [ CharsNode('bd') ], 
+                [ CharsNode('213') ]
+              )
+            ])
+        ]),
+      ],
+      groupNum : 1
+    });
+  });
+
   it('(ac|b)d', () => {
     expect(generateNode('(ac|b)d')).toEqual({ 
       expNodeList : [

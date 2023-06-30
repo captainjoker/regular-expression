@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html {
+            font-size: 14px;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        .node-unit {
+            padding: 10px;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        .expression-container {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .expression {
+            background-color: bisque;
+            font-weight: bold;
+            color: brown;
+            padding: 10px;
+        }
+
+        .chars {
+            border-bottom: dotted 1px #66b4a5;
+        }
+
+        .comment {
+            color: #d55656;
+        }
+
+        .analysis {
+            background-color: #f1ecec;
+            margin-left: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 5px;
+        }
+
+        .wrap-container {
+            border-top: 2px solid #8b6e97;
+            padding: 10px;
+            position: relative;
+        }
+
+        .wrap-container::before,
+        .wrap-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translateY(-100%);
+            height: 6px;
+            width: 2px;
+            background-color: #8b6e97;
+        }
+
+        .wrap-container::after {
+            right: 0;
+            left: auto;
+        }
+
+        .group-unit {
+            display: inline-block;
+            vertical-align: top;
+            padding: 0 10px;
+
+        }
+
+        .font-axi {
+            color: #aba9a9;
+            font-size: 12px;
+        }
+
+        .vertical-line{
+            height: 100%;
+            width: 1px;
+            display: inline-block;
+            position: absolute;
+            background-color: #8b6e97;
+        }
+    </style>
+    <script src="./dist/regular-expression.generateNode.js"></script>
+</head>
+
+<body>
+    <input type="text" placeholder="请输入正则表达式" id="regularExpression" value="a(123{1,2}ab(123)c){2,3}?">
+    <button type="button" id="parseBtn">解析</button>
+    <div id="result"></div>
+    <script>
+        document.querySelector('#parseBtn').addEventListener('click', e => {
+            let expression = document.querySelector('#regularExpression').value;
+            let result = RegExpGenerateNode(expression);
+            let { expNodeList } = result;
+            document.querySelector('#result').insertAdjacentHTML('beforeend', `
+                <div class="expression-container">
+                    <div class="expression">${expression} </div>
+                    <div class="analysis">${getHtml(expNodeList)}</div>
+                </div>
+            `);
+        })
+        function getHtml(nodeList) {
+            let html = [];
+            nodeList.map(node => {
+                let { quantifierNode, value } = node;
+                switch (node.type) {
+                    case 'PRESETSET':
+                        html.push(getPresetSet(value, quantifierNode));
+                        break;
+                    case 'RANGECHARSET':
+                        html.push(getRangeChars(node));
+                        break;
+                    case 'CHARSET':
+                        html.push(getCharSet(node, getHtml(value)));
+                        break;
+                    case 'CHARS':
+                        html.push(getUnit(value, quantifierNode));
+                        break;
+                    case 'GROUPID':
+                        html.push(getUnit(`#${value}<span class="font-axi">【分组id】</span>`, quantifierNode));
+                        break;
+                    case 'ASSERTIONS':
+                        html.push(getAssert(node, getHtml(value)));
+                        break;
+                    case 'LOGICOR':
+                        html.push(getLogicOr(node));
+                        break;
+                    case 'GROUP':
+                        html.push(getGroup(node, getHtml(value)));
+                        break;
+                    case 'BOUNDARY':
+                        html.push(getBoumdary(value));
+                        break;
+
+                }
+            })
+            return html.join('');
+        }
+
+        function getUnit(chars, quantifierNode) {
+            let comment = '匹配1次';
+            if (quantifierNode) {
+                comment = getQuantifierNode(quantifierNode);
+            }
+            return `<div class="node-unit">
+                <div class="chars">${chars}</div>
+                <div class="comment">${comment}</div>
+            </div>`;
+        }
+
+        function getBoumdary(value) {
+            let comment = '';
+            switch (value) {
+                case '^':
+                    comment = '开头'
+                    break;
+                case '$':
+                    comment = '结尾'
+                    break;
+                case 'b':
+                    comment = '单词边界'
+                    break;
+                case 'B':
+                    comment = '非单词边界'
+                    break;
+            }
+            return `<div class="node-unit">
+                <div class="chars">&emsp;</div>
+                <div class="comment">${comment}</div>
+            </div>`;
+        }
+
+        function getPresetSet(value, quantifierNode) {
+            let comment = '匹配1次';
+            if (quantifierNode) {
+                comment = getQuantifierNode(quantifierNode);
+            }
+            let text = '';
+            switch (value) {
+                case 'D':
+                    text = '任何非数字的字符';
+                    break;
+                case 'd':
+                    text = '任何数字 ';
+                    break;
+                case 'S':
+                    text = '除空格以外的单个字符';
+                    break;
+                case 's':
+                    text = '空白字符';
+                    break;
+                case 'W':
+                    text = '非来自基本拉丁字母的单词字符';
+                    break;
+                case 'w':
+                    text = '基本拉丁字母中的任何字母数字字符';
+                    break;
+                case 'f':
+                    text = '换页符';
+                    break;
+                case 'n':
+                    text = '换行符';
+                    break;
+                case 'r':
+                    text = '回车符';
+                    break;
+                case 'v':
+                    text = '垂直制表符';
+                    break;
+                case 't':
+                    text = '水平制表符';
+                    break;
+            }
+            return `<div class="node-unit">
+                <div class="chars">\\${value}</div>
+                <div class="comment">${text}${comment}</div>
+            </div>`;
+        }
+
+        function getGroup(node, innerHtml) {
+            let { isCatch, groupId, value, quantifierNode } = node;
+            let comment = '匹配1次';
+            if (quantifierNode) {
+                comment = getQuantifierNode(quantifierNode);
+            }
+            return `<div class="group-unit">
+                <div>${innerHtml}</div>
+                <div class="wrap-container comment">分组#${groupId}，${comment}</div>
+            </div>`
+        }
+
+        function getCharSet(node, innerHtml) {
+            let { isNone, value, quantifierNode } = node;
+            let comment = '匹配1次';
+            if (quantifierNode) {
+                comment = getQuantifierNode(quantifierNode);
+            }
+            return `<div class="group-unit">
+                <div>${innerHtml}</div>
+                <div class="wrap-container comment">其中任意一个字符${comment}</div>
+            </div>`
+        }
+
+        function getLogicOr(node) {
+            let { left, right } = node;
+            return `<div class="group-unit">
+                <div style="position:relative;">${getHtml(left)} <div class="vertical-line"></div> ${getHtml(right)}</div>
+                <div class="wrap-container comment">匹配左边或者右边</div>
+            </div>`
+        }
+
+        function getRangeChars(node) {
+            let { min, max } = node;
+            min = String.fromCharCode(min);
+            max = String.fromCharCode(max);
+            return `<div class="node-unit">
+                <div class="chars">${min}-${max}</div>
+                <div class="comment">${min}到${max}之间的字符</div>
+            </div>`
+        }
+
+        function getAssert(node, innerHtml) {
+            let { isPositive, isNone, value } = node;
+            return `<div class="group-unit">
+                <div>${innerHtml}</div>
+                <div class="wrap-container comment">断言：是否${isNone ? '不匹配' : '匹配'}；但不消耗字符，只做判断</div>
+            </div>`
+        }
+
+        function getQuantifierNode(quantifierNode) {
+            let { min, max, isLazy } = quantifierNode;
+            max = max === -1 ? '无穷' : max;
+            min = min === -1 ? 0 : min;
+            return `${isLazy ? '非贪婪的' : '贪婪的'}匹配${min}到${max}次`;
+        }
+    </script>
+</body>
+
+</html>

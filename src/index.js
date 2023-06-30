@@ -17,6 +17,10 @@ class RegularExpression {
     this.lastIndex = 0;
     this.lastItem = '';
   }
+
+  static generateNode(pattern){
+    return generateNode(pattern);
+  }
     
   exec(text) {
     return this.run(text);
@@ -30,5 +34,6 @@ class RegularExpression {
 }
 
 // console.log(new RegularExpression('a(?!123)').exec('a123'));
+// console.log(JSON.stringify(new RegularExpression('(a|b|c)')));
 
 module.exports = RegularExpression;

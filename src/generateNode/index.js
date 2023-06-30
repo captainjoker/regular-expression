@@ -355,7 +355,7 @@ const generateNode = function(exp){
         case ')':
         // 判断分组内是否存在逻辑或
         // 存在时将当前expNodeList 赋值 给逻辑或节点右手，再闭合逻辑或, expNodeList 指向逻辑或节点
-          if (isNodeType(getLastNodeInStack(), LOGICOR)){
+          while (isNodeType(getLastNodeInStack(), LOGICOR)){
             getLastNodeInStack().right = expNodeList;
             setStacks(true);
           }

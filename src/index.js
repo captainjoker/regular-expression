@@ -1,5 +1,4 @@
-const generateNode = require('./generateNode');
-
+const generateNode = require('reg-exp-generate-node');
 const MatchHelper = require('./match');
 
 

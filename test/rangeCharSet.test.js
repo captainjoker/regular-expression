@@ -1,4 +1,4 @@
-const RegularExpression = require('../../src');
+const RegularExpression = require('../src');
 
 describe('exec rangeCharSet', () => {
   it('abc[a-z] - abcd', () => {

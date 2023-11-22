@@ -1,4 +1,4 @@
-const RegularExpression = require('../../src');
+const RegularExpression = require('../src');
 
 describe('exec assertions', () => {
   it('a(?=123) - a2', () => {
